@@ -1,0 +1,41 @@
+name: Daily Weather Briefing
+
+on:
+  schedule:
+    # GitHub Actions의 cron은 UTC 기준입니다.
+    # UTC 22:30 = 한국 시간(KST, UTC+9) 다음 날 07:30
+    # ※ GitHub 서버가 붐비면 수 분~수십 분 늦게 실행될 수 있습니다.
+    #   07:30 전에 꼭 받고 싶다면 "15 22 * * *"(07:15)처럼 조금 앞당기세요.
+    - cron: "30 22 * * *"
+  # Actions 탭에서 "Run workflow" 버튼으로 수동 실행 가능
+  workflow_dispatch:
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send weather briefing
+        env:
+          # Settings > Secrets and variables > Actions > Secrets 에 등록
+          KMA_SERVICE_KEY: ${{ secrets.KMA_SERVICE_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          # Settings > Secrets and variables > Actions > Variables 에 등록 (선택, 비우면 기본값)
+          NX: ${{ vars.NX }}
+          NY: ${{ vars.NY }}
+          LOCATION_NAME: ${{ vars.LOCATION_NAME }}
+          TEST_MODE: ${{ vars.TEST_MODE }}
+        run: python main.py --once

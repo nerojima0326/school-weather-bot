@@ -1,0 +1,65 @@
+name: Publish Weather Website
+
+on:
+  schedule:
+    # UTC 20:30 = 한국 시간(KST) 05:30 → 기상청 05시 발표 자료가 올라온 직후 갱신
+    - cron: "30 20 * * *"
+  # Actions 탭에서 "Run workflow" 버튼으로 수동 실행 가능
+  workflow_dispatch:
+
+# GitHub Pages 배포에 필요한 권한
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Build website
+        env:
+          KMA_SERVICE_KEY: ${{ secrets.KMA_SERVICE_KEY }}
+          NX: ${{ vars.NX }}
+          NY: ${{ vars.NY }}
+          LOCATION_NAME: ${{ vars.LOCATION_NAME }}
+          TEST_MODE: ${{ vars.TEST_MODE }}
+        run: python web_page.py
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

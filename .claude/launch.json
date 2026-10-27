@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "weather-web",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-m", "uvicorn", "web_server:app", "--port", "8000"],
+      "port": 8000
+    },
+    {
+      "name": "weather-web-mock",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-m", "uvicorn", "web_server:app", "--port", "8001"],
+      "env": { "TEST_MODE": "true", "MOCK_SCENARIO": "rainy" },
+      "port": 8001
+    }
+  ]
+}
